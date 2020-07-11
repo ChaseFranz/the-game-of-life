@@ -10,13 +10,12 @@ namespace TheGameOfLife
 
         public List<Cell> Neighbors { get; set; }
 
-        // TEMP
-        private static Random rand = new Random();
+        private static Random randomObj = new Random();
 
         public Cell()
         {
             Neighbors = new List<Cell>();
-            if (rand.Next(0,20) == 0)
+            if (randomObj.Next(0,100) == 0)
             {
                 Alive = true;
             }

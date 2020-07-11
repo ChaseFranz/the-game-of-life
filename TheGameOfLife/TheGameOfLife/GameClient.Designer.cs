@@ -44,11 +44,6 @@
             this.canvas.TabIndex = 0;
             this.canvas.TabStop = false;
             // 
-            // gameTimer
-            // 
-            this.gameTimer.Interval = 500;
-            this.gameTimer.Tick += new System.EventHandler(this.gameTimer_Tick);
-            // 
             // GameClient
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);

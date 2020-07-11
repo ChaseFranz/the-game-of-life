@@ -1,16 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Drawing.Text;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -38,7 +29,7 @@ namespace TheGameOfLife
             GameEngine.Xcells = canvas.Image.Width;
             GameEngine.StartGame();
 
-            for(int x=0; x < 1000; x++)
+            for(int x=0; x < 10000; x++)
             {
                 GameEngine.NextCycle();
             }
@@ -46,21 +37,11 @@ namespace TheGameOfLife
 
         public void RefreshClient()
         {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-            UpdateClientBitMapSingleThread();
+            UpdateClientBitMapMultiThreadLockbits();
             Refresh();
-            stopWatch.Stop();
-            TimeSpan ts = stopWatch.Elapsed;
-
-            // Format and display the TimeSpan value.
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                ts.Hours, ts.Minutes, ts.Seconds,
-                ts.Milliseconds / 10);
-            Debug.Print($"RunTime - ClientUpdate {elapsedTime}\n\n");
         }
 
-        private void UpdateClientBitMapSingleThread()
+        private void UpdateClientBitMapSetPixel()
         {
             foreach (Cell cell in GameEngine.CellBag)
             {
@@ -74,7 +55,7 @@ namespace TheGameOfLife
                     {
                         if (cell.Alive)
                         {
-                            source.SetPixel(x, y, Color.DarkRed);
+                            source.SetPixel(x, y, Color.White);
                         }
                         else
                         {
@@ -82,34 +63,65 @@ namespace TheGameOfLife
                         }
                     }
                 }
-
             }
         }
 
-        private void UpdateClientBitMapMultiThread()
+        /// <summary>
+        /// http://csharpexamples.com/fast-image-processing-c/#comment-123485
+        /// </summary>
+        private void UpdateClientBitMapMultiThreadLockbits()
         {
-            //foreach (Cell cell in GameEngine.CellBag)
-            //{
-            //    Bitmap source = (Bitmap)canvas.Image;
+            unsafe
+            {
+                Bitmap processedBitmap = (Bitmap)canvas.Image;
 
-            //    CellPixelMapper.TryGetValue(cell, out (int xCoordinate, int yCoordinate, int width, int height) value);
+                BitmapData bitmapData = processedBitmap.LockBits(new Rectangle(0, 0, processedBitmap.Width, processedBitmap.Height), ImageLockMode.ReadWrite, processedBitmap.PixelFormat);
 
-            //    for (int x = value.xCoordinate; x < value.xCoordinate + value.width; x++)
-            //    {
-            //        for (int y = value.yCoordinate; y < value.yCoordinate + value.height; y++)
-            //        {
-            //            if (cell.Alive)
-            //            {
-            //                source.SetPixel(x, y, Color.DarkRed);
-            //            }
-            //            else
-            //            {
-            //                source.SetPixel(x, y, Color.DarkGray);
-            //            }
-            //        }
-            //    }
+                int bytesPerPixel = System.Drawing.Bitmap.GetPixelFormatSize(processedBitmap.PixelFormat) / 8;
+                int heightInPixels = bitmapData.Height;
+                int widthInBytes = bitmapData.Width * bytesPerPixel;
+                byte* PtrFirstPixel = (byte*)bitmapData.Scan0;
 
-            //}
+                Parallel.For(0, heightInPixels, y =>
+                {
+
+                    // Need to find what cell this pixel belongs to.
+
+                    byte* currentLine = PtrFirstPixel + (y * bitmapData.Stride);
+
+                    int currentPixel = 0;
+
+                    for (int x = 0; x < widthInBytes; x = x + bytesPerPixel)
+                    {
+
+                        // Calculate y cell index
+                        int pixelsPerCellY = heightInPixels / GameEngine.Ycells;
+                        int yIndex = y/pixelsPerCellY;
+
+                        int pixelsPerCellX = widthInBytes/bytesPerPixel/GameEngine.Xcells;
+
+                        int xIndex = (x/bytesPerPixel) / pixelsPerCellX;
+
+                        bool alive = GameEngine.Cells[xIndex, yIndex].Alive;
+                        currentPixel++;
+
+                        if (alive)
+                        {
+                            currentLine[x] = (byte)Color.White.B;
+                            currentLine[x + 1] = (byte)Color.White.G;
+                            currentLine[x + 2] = (byte)Color.White.R;
+                        }
+                        else
+                        {
+                            currentLine[x] = (byte)Color.DarkGray.B;
+                            currentLine[x + 1] = (byte)Color.DarkGray.G;
+                            currentLine[x + 2] = (byte)Color.DarkGray.R;
+                        }
+                        
+                    }
+                });
+                processedBitmap.UnlockBits(bitmapData);
+            }
         }
 
         public void MapCellsToClient(Cell[,] cells)
@@ -135,11 +147,6 @@ namespace TheGameOfLife
             //        CellPixelMapper.Add(cells[x, y], (x * cellWidthPixels, y * cellHeightPixels, cellWidthPixels, cellHeightPixels));
             //    }
             //}
-        }
-
-        private void gameTimer_Tick(object sender, EventArgs e)
-        {
-            //GameEngine.NextCycle();
         }
     }
 }

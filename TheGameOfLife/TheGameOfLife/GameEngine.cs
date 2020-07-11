@@ -1,15 +1,7 @@
-﻿using Microsoft.VisualBasic;
-using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
-using System.Windows.Forms;
 
 namespace TheGameOfLife
 {
@@ -116,7 +108,6 @@ namespace TheGameOfLife
                 }
             }
             GameClient.MapCellsToClient(Cells);
-            Cells = null;
         }
 
         public void StartGame()
@@ -127,16 +118,9 @@ namespace TheGameOfLife
 
         public void NextCycle()
         {
-            //List<Cell> deadCells = new List<Cell>();
-            //List<Cell> liveCells = new List<Cell>();
             ConcurrentBag<Cell> deadCells = new ConcurrentBag<Cell>();
             ConcurrentBag<Cell> liveCells = new ConcurrentBag<Cell>();
 
-
-            
-
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
             Parallel.ForEach(CellBag, cell =>
             {
                 int livingNeighbors = cell.Neighbors.Where(n => n.Alive).Count();
@@ -154,70 +138,7 @@ namespace TheGameOfLife
                     }
                 }
             });
-            stopWatch.Stop();
-            TimeSpan ts = stopWatch.Elapsed;
-
-            // Format and display the TimeSpan value.
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                ts.Hours, ts.Minutes, ts.Seconds,
-                ts.Milliseconds / 10);
-            Debug.Print($"RunTime - GameLogic {elapsedTime}\n\n");
-
-
-            //Parallel.For(0, Cells.GetLength(1), (int x) =>
-            //{
-            //    for (int y = 0; y < Cells.GetLength(1); y++)
-            //    {
-            //        if (!Cells[x, y].Alive && Cells[x, y].Neighbors.Where(n => n.Alive).Count() == 0)
-            //        {
-            //            continue;
-            //        }
-
-            //        int livingNeighbors = Cells[x, y].Neighbors.Where(n => n.Alive).Count();
-            //        bool isLiving = Cells[x, y].Alive;
-
-            //        if (isLiving && livingNeighbors == 2 || livingNeighbors == 3)
-            //        {
-            //            liveCells.Add(Cells[x, y]);
-            //        }
-            //        else if (!isLiving && livingNeighbors == 3)
-            //        {
-            //            liveCells.Add(Cells[x, y]);
-            //        }
-            //        else
-            //        {
-            //            deadCells.Add(Cells[x, y]);
-            //        }
-            //    }
-            //});
-
-            //for (int x = 0; x < Cells.GetLength(0); x++)
-            //{
-            //    for (int y = 0; y < Cells.GetLength(1); y++)
-            //    {
-            //        if (!Cells[x, y].Alive && Cells[x,y].Neighbors.Where(n=>n.Alive).Count() == 0)
-            //        {
-            //            continue;
-            //        }
-
-            //        int livingNeighbors = Cells[x, y].Neighbors.Where(n => n.Alive).Count();
-            //        bool isLiving = Cells[x, y].Alive;
-
-            //        if (isLiving && livingNeighbors == 2 || livingNeighbors == 3)
-            //        {
-            //            liveCells.Add(Cells[x, y]);
-            //        }
-            //        else if (!isLiving && livingNeighbors == 3)
-            //        {
-            //            liveCells.Add(Cells[x, y]);
-            //        }
-            //        else
-            //        {
-            //            deadCells.Add(Cells[x, y]);
-            //        }
-            //    }
-            //}
-
+            
             foreach (Cell cell in deadCells)
             {
                 cell.Alive = false;
