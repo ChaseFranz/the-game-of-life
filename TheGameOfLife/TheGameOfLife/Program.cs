@@ -17,7 +17,12 @@ namespace TheGameOfLife
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            
+            IClient client = new GameClient(new GameEngine());
+
+            Application.Run((GameClient)client);
+
+            
         }
     }
 }
