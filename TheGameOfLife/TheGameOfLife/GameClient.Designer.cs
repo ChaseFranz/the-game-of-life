@@ -40,6 +40,7 @@
             this.canvas.Margin = new System.Windows.Forms.Padding(0);
             this.canvas.Name = "canvas";
             this.canvas.Size = new System.Drawing.Size(500, 500);
+            this.canvas.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
             this.canvas.TabIndex = 0;
             this.canvas.TabStop = false;
             // 
@@ -52,7 +53,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(892, 686);
+            this.ClientSize = new System.Drawing.Size(1924, 1062);
             this.Controls.Add(this.canvas);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "GameClient";
@@ -61,6 +62,7 @@
             this.Load += new System.EventHandler(this.GameClient_Load);
             ((System.ComponentModel.ISupportInitialize)(this.canvas)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 

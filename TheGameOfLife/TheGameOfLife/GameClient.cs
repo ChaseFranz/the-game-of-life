@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -9,6 +10,7 @@ using System.Drawing.Text;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -16,10 +18,9 @@ namespace TheGameOfLife
 {
     public partial class GameClient : Form, IClient
     {
-        public bool IsReady { get; set; }
         public IGameEngine GameEngine { get; set; }
 
-        private Dictionary<Cell,(int x, int y, int width, int height)> CellPixelMapper { get; set; }
+        private ConcurrentDictionary<Cell,(int x, int y, int width, int height)> CellPixelMapper { get; set; }
 
         public GameClient(IGameEngine gameEngine)
         {
@@ -30,78 +31,115 @@ namespace TheGameOfLife
 
         private void GameClient_Load(object sender, EventArgs e)
         {
-            canvas.Size = new Size(ClientRectangle.Height, ClientRectangle.Height);
+            canvas.Size = new Size(ClientRectangle.Width, ClientRectangle.Height);
             canvas.Image = new Bitmap(canvas.Width, canvas.Height, PixelFormat.Format24bppRgb);
-            IsReady = true;
             gameTimer.Enabled = true;
+            GameEngine.Ycells = canvas.Image.Height;
+            GameEngine.Xcells = canvas.Image.Width;
             GameEngine.StartGame();
+
+            for(int x=0; x < 1000; x++)
+            {
+                GameEngine.NextCycle();
+            }
         }
 
-        public void UpdateClient()
+        public void RefreshClient()
         {
-            for (int x = 0; x < GameEngine.Cells.GetLength(0); x++)
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+            UpdateClientBitMapSingleThread();
+            Refresh();
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                ts.Hours, ts.Minutes, ts.Seconds,
+                ts.Milliseconds / 10);
+            Debug.Print($"RunTime - ClientUpdate {elapsedTime}\n\n");
+        }
+
+        private void UpdateClientBitMapSingleThread()
+        {
+            foreach (Cell cell in GameEngine.CellBag)
             {
-                for (int y = 0; y < GameEngine.Cells.GetLength(1); y++)
+                Bitmap source = (Bitmap)canvas.Image;
+
+                CellPixelMapper.TryGetValue(cell, out (int xCoordinate, int yCoordinate, int width, int height) value);
+
+                for (int x = value.xCoordinate; x < value.xCoordinate + value.width; x++)
                 {
-                    UpdateBitMap(GameEngine.Cells[x, y]);
-                }
-            }
-            this.Refresh();
-        }
-
-        public void UpdateClient(ICollection<Cell> updateCells)
-        {
-            foreach(Cell cell in updateCells)
-            {
-                UpdateBitMap(cell);
-            }
-
-            this.Refresh();
-        }
-
-        private void UpdateBitMap(Cell cell)
-        {
-            Bitmap source = (Bitmap)canvas.Image;
-
-            CellPixelMapper.TryGetValue(cell, out (int xCoordinate, int yCoordinate, int width, int height) value);
-
-            for (int x = value.xCoordinate; x < value.xCoordinate + value.width; x++)
-            {
-                for(int y = value.yCoordinate; y < value.yCoordinate + value.height; y++)
-                {
-                    if (cell.Alive)
+                    for (int y = value.yCoordinate; y < value.yCoordinate + value.height; y++)
                     {
-                        source.SetPixel(x, y, Color.Green);
-                    }
-                    else
-                    {
-                        source.SetPixel(x, y, Color.Black);
+                        if (cell.Alive)
+                        {
+                            source.SetPixel(x, y, Color.DarkRed);
+                        }
+                        else
+                        {
+                            source.SetPixel(x, y, Color.DarkGray);
+                        }
                     }
                 }
+
             }
+        }
+
+        private void UpdateClientBitMapMultiThread()
+        {
+            //foreach (Cell cell in GameEngine.CellBag)
+            //{
+            //    Bitmap source = (Bitmap)canvas.Image;
+
+            //    CellPixelMapper.TryGetValue(cell, out (int xCoordinate, int yCoordinate, int width, int height) value);
+
+            //    for (int x = value.xCoordinate; x < value.xCoordinate + value.width; x++)
+            //    {
+            //        for (int y = value.yCoordinate; y < value.yCoordinate + value.height; y++)
+            //        {
+            //            if (cell.Alive)
+            //            {
+            //                source.SetPixel(x, y, Color.DarkRed);
+            //            }
+            //            else
+            //            {
+            //                source.SetPixel(x, y, Color.DarkGray);
+            //            }
+            //        }
+            //    }
+
+            //}
         }
 
         public void MapCellsToClient(Cell[,] cells)
         {
-            int dimensionLength = (int)(Math.Sqrt(GameEngine.Cells.Length));
-
             // Get Dimensions in pixels of each cell
-            int cellWidthPixels = (int)(canvas.Width / dimensionLength);
-            int cellHeightPixels = (int)(canvas.Height / dimensionLength);
-            CellPixelMapper = new Dictionary<Cell, (int x, int y, int width, int height)>();
+            int cellWidthPixels = (int)(canvas.Image.Width / GameEngine.Xcells);
+            int cellHeightPixels = (int)(canvas.Image.Height / GameEngine.Ycells);
 
-            for (int x = 0; x < cells.GetLength(0); x++)
-            {
+
+            CellPixelMapper = new ConcurrentDictionary<Cell, (int x, int y, int width, int height)>();
+
+
+            Parallel.For(0, cells.GetLength(0), (int x) => {
                 for (int y = 0; y < cells.GetLength(1); y++)
                 {
-                    CellPixelMapper.Add(cells[x, y], (x * cellWidthPixels, y * cellHeightPixels, cellWidthPixels, cellHeightPixels));
+                    CellPixelMapper.TryAdd(cells[x, y], (x * cellWidthPixels, y * cellHeightPixels, cellWidthPixels, cellHeightPixels));
                 }
-            }
+            });
+            //for (int x = 0; x < cells.GetLength(0); x++)
+            //{
+            //    for (int y = 0; y < cells.GetLength(1); y++)
+            //    {
+            //        CellPixelMapper.Add(cells[x, y], (x * cellWidthPixels, y * cellHeightPixels, cellWidthPixels, cellHeightPixels));
+            //    }
+            //}
         }
 
         private void gameTimer_Tick(object sender, EventArgs e)
         {
-            GameEngine.NextCycle();
+            //GameEngine.NextCycle();
         }
     }
 }

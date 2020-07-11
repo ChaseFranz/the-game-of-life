@@ -6,9 +6,7 @@ namespace TheGameOfLife
     {
         public IGameEngine GameEngine { get; set; }
 
-        public bool IsReady { get; set; }
-        public void UpdateClient();
-        public void UpdateClient(ICollection<Cell> cellUpdates);
+        public void RefreshClient();
 
         public void MapCellsToClient(Cell[,] cells);
 

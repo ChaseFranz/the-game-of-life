@@ -16,7 +16,7 @@ namespace TheGameOfLife
         public Cell()
         {
             Neighbors = new List<Cell>();
-            if (rand.Next(0,10) == 0)
+            if (rand.Next(0,20) == 0)
             {
                 Alive = true;
             }
