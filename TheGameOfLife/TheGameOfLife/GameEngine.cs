@@ -26,7 +26,9 @@ namespace TheGameOfLife
         private void GenerateCells()
         {
             Cells = new Cell[Xcells, Ycells];
-            for (int x = 0; x < Cells.GetLength(0); x++)
+            int rowCount = Cells.GetLength(0);
+            int columnCount = Cells.GetLength(1);
+            for (int x = 0; x < rowCount; x++)
             {
                 for (int y = 0; y < Cells.GetLength(1); y++)
                 {
@@ -37,7 +39,7 @@ namespace TheGameOfLife
                     switch (x,y)
                     {
                         // RIGHT WALL OR MIDDLE
-                        case var tuple when tuple.x > 0 && tuple.y > 0 && tuple.y < Cells.GetLength(1) - 1:
+                        case var tuple when tuple.x > 0 && tuple.y > 0 && tuple.y < columnCount - 1:
                             current.Neighbors.AddRange(new List<Cell>() {
                                 Cells[x, y - 1],
                                 Cells[x - 1, y - 1],
@@ -51,7 +53,7 @@ namespace TheGameOfLife
                             break;
 
                         // BOTTOM WALL
-                        case var tuple when tuple.x > 0 && tuple.x <= Cells.GetLength(0) - 1 && tuple.y == Cells.GetLength(1) - 1:
+                        case var tuple when tuple.x > 0 && tuple.x <= rowCount - 1 && tuple.y == columnCount - 1:
                             current.Neighbors.AddRange(new List<Cell>() {
                                 Cells[x, y - 1],
                                 Cells[x - 1, y - 1],
@@ -73,7 +75,7 @@ namespace TheGameOfLife
                             break;
 
                         // LEFT WALL
-                        case var tuple when tuple.x == 0 && tuple.y >= 1 && tuple.y < Cells.GetLength(1) - 1:
+                        case var tuple when tuple.x == 0 && tuple.y >= 1 && tuple.y < columnCount - 1:
                             current.Neighbors.AddRange(new List<Cell>() {
                                 Cells[x, y - 1],
                             });
@@ -86,7 +88,7 @@ namespace TheGameOfLife
                             break;
 
                         // BOTTOM LEFT Corner
-                        case var tuple when tuple.x == 0 && tuple.y == Cells.GetLength(1) - 1:
+                        case var tuple when tuple.x == 0 && tuple.y == columnCount - 1:
                             current.Neighbors.AddRange(new List<Cell>() { 
                                 Cells[x, y-1]
                             });
@@ -94,7 +96,7 @@ namespace TheGameOfLife
                             break;
 
                         // BOTTOM RIGHT Corner
-                        case var tuple when tuple.x == Cells.GetLength(0) - 1 && tuple.y == Cells.GetLength(1) - 1:
+                        case var tuple when tuple.x == rowCount - 1 && tuple.y == columnCount - 1:
                             current.Neighbors.AddRange(new List<Cell>() { 
                                 Cells[x, y - 1],
                                 Cells[x - 1, y - 1],

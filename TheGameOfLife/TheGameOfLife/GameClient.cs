@@ -22,14 +22,14 @@ namespace TheGameOfLife
 
         private void GameClient_Load(object sender, EventArgs e)
         {
-            canvas.Size = new Size(ClientRectangle.Width, ClientRectangle.Height);
+            canvas.Size = new Size(ClientRectangle.Width / 4, ClientRectangle.Height / 4);
             canvas.Image = new Bitmap(canvas.Width, canvas.Height, PixelFormat.Format24bppRgb);
             gameTimer.Enabled = true;
             GameEngine.Ycells = canvas.Image.Height;
             GameEngine.Xcells = canvas.Image.Width;
             GameEngine.StartGame();
 
-            for(int x=0; x < 10000; x++)
+            for(int x=0; x < 100; x++)
             {
                 GameEngine.NextCycle();
             }
@@ -74,50 +74,42 @@ namespace TheGameOfLife
             unsafe
             {
                 Bitmap processedBitmap = (Bitmap)canvas.Image;
-
                 BitmapData bitmapData = processedBitmap.LockBits(new Rectangle(0, 0, processedBitmap.Width, processedBitmap.Height), ImageLockMode.ReadWrite, processedBitmap.PixelFormat);
-
                 int bytesPerPixel = System.Drawing.Bitmap.GetPixelFormatSize(processedBitmap.PixelFormat) / 8;
                 int heightInPixels = bitmapData.Height;
                 int widthInBytes = bitmapData.Width * bytesPerPixel;
                 byte* PtrFirstPixel = (byte*)bitmapData.Scan0;
+                int pixelsPerCellY = heightInPixels / GameEngine.Ycells;
+                int pixelsPerCellX = widthInBytes / bytesPerPixel / GameEngine.Xcells;
+
+
 
                 Parallel.For(0, heightInPixels, y =>
                 {
-
-                    // Need to find what cell this pixel belongs to.
-
                     byte* currentLine = PtrFirstPixel + (y * bitmapData.Stride);
-
                     int currentPixel = 0;
 
-                    for (int x = 0; x < widthInBytes; x = x + bytesPerPixel)
+                    // Calculate y cell index
+                    int yIndex = y / pixelsPerCellY;
+
+                    for (int x = 0; x < widthInBytes; x += bytesPerPixel)
                     {
-
-                        // Calculate y cell index
-                        int pixelsPerCellY = heightInPixels / GameEngine.Ycells;
-                        int yIndex = y/pixelsPerCellY;
-
-                        int pixelsPerCellX = widthInBytes/bytesPerPixel/GameEngine.Xcells;
-
                         int xIndex = (x/bytesPerPixel) / pixelsPerCellX;
-
                         bool alive = GameEngine.Cells[xIndex, yIndex].Alive;
                         currentPixel++;
 
                         if (alive)
                         {
-                            currentLine[x] = (byte)Color.White.B;
-                            currentLine[x + 1] = (byte)Color.White.G;
-                            currentLine[x + 2] = (byte)Color.White.R;
+                            currentLine[x] = Color.White.B;
+                            currentLine[x + 1] = Color.White.G;
+                            currentLine[x + 2] = Color.White.R;
                         }
                         else
                         {
-                            currentLine[x] = (byte)Color.DarkGray.B;
-                            currentLine[x + 1] = (byte)Color.DarkGray.G;
-                            currentLine[x + 2] = (byte)Color.DarkGray.R;
+                            currentLine[x] = Color.DarkGray.B;
+                            currentLine[x + 1] = Color.DarkGray.G;
+                            currentLine[x + 2] = Color.DarkGray.R;
                         }
-                        
                     }
                 });
                 processedBitmap.UnlockBits(bitmapData);
@@ -127,26 +119,19 @@ namespace TheGameOfLife
         public void MapCellsToClient(Cell[,] cells)
         {
             // Get Dimensions in pixels of each cell
-            int cellWidthPixels = (int)(canvas.Image.Width / GameEngine.Xcells);
-            int cellHeightPixels = (int)(canvas.Image.Height / GameEngine.Ycells);
-
+            int cellWidthPixels = (canvas.Image.Width / GameEngine.Xcells);
+            int cellHeightPixels = (canvas.Image.Height / GameEngine.Ycells);
+            int rowCount = cells.GetLength(0);
+            int columnCount = cells.GetLength(1);
 
             CellPixelMapper = new ConcurrentDictionary<Cell, (int x, int y, int width, int height)>();
 
-
-            Parallel.For(0, cells.GetLength(0), (int x) => {
-                for (int y = 0; y < cells.GetLength(1); y++)
+            Parallel.For(0, rowCount, (int x) => {
+                for (int y = 0; y < columnCount; y++)
                 {
                     CellPixelMapper.TryAdd(cells[x, y], (x * cellWidthPixels, y * cellHeightPixels, cellWidthPixels, cellHeightPixels));
                 }
             });
-            //for (int x = 0; x < cells.GetLength(0); x++)
-            //{
-            //    for (int y = 0; y < cells.GetLength(1); y++)
-            //    {
-            //        CellPixelMapper.Add(cells[x, y], (x * cellWidthPixels, y * cellHeightPixels, cellWidthPixels, cellHeightPixels));
-            //    }
-            //}
         }
     }
 }
