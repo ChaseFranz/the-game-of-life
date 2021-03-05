@@ -11,8 +11,6 @@ namespace TheGameOfLife
         public int GridHeight { get; set; }
         public int GridWidth { get; set; }
 
-        public ConcurrentBag<Cell> CellBag { get; set; }
-
         public void StartGame();
 
         public void NextCycle();

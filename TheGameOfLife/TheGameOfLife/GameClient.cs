@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading.Tasks;
@@ -12,8 +10,6 @@ namespace TheGameOfLife
     {
         public IGameEngine GameEngine { get; set; }
 
-        private ConcurrentDictionary<Cell,(int x, int y, int width, int height)> CellPixelMapper { get; set; }
-
         public GameClient(IGameEngine gameEngine)
         {
             InitializeComponent();
@@ -23,14 +19,14 @@ namespace TheGameOfLife
 
         private void GameClient_Load(object sender, EventArgs e)
         {
-            canvas.Size = new Size(ClientRectangle.Width, ClientRectangle.Height);
+            canvas.Size = new Size(ClientRectangle.Width / 2, ClientRectangle.Height / 2);
             canvas.Image = new Bitmap(canvas.Width, canvas.Height, PixelFormat.Format24bppRgb);
             gameTimer.Enabled = true;
             GameEngine.GridHeight = canvas.Image.Height;
             GameEngine.GridWidth = canvas.Image.Width;
             GameEngine.StartGame();
 
-            for (int x = 0; x < 100; x++)
+            for (int x = 0; x < 1000; x++)
             {
                 GameEngine.NextCycle();
             }  
