@@ -143,7 +143,7 @@ namespace TheGameOfLife
                     }
                 }
             });
-            
+
             foreach (Cell cell in deadCells)
             {
                 cell.Alive = false;

@@ -61,16 +61,13 @@ namespace TheGameOfLife
                 Parallel.For(0, heightInPixels, y =>
                 {
                     byte* currentLine = PtrFirstPixel + (y * bitmapData.Stride);
-                    int currentPixel = 0;
-
                     // Calculate y cell index
-                    int yIndex = y / pixelsPerCellY;
+                    int row = y / pixelsPerCellY;
 
                     for (int x = 0; x < widthInBytes; x += bytesPerPixel)
                     {
-                        int xIndex = (x / bytesPerPixel) / pixelsPerCellX;
-                        bool alive = GameEngine.Cells[yIndex, xIndex ].Alive;
-                        currentPixel++;
+                        int column = (x/bytesPerPixel)/pixelsPerCellX;
+                        bool alive = GameEngine.Cells[row,column].Alive;
 
                         if (alive)
                         {
