@@ -1,5 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,8 +12,8 @@ namespace TheGameOfLife
         public  Cell[,] Cells { get; set; }
 
         public ConcurrentBag<Cell> CellBag { get; set; }
-        public int Ycells { get; set; }
-        public int Xcells { get; set; }
+        public int GridHeight { get; set; }
+        public int GridWidth { get; set; }
 
         public IClient GameClient { get; set; }
 
@@ -25,12 +27,14 @@ namespace TheGameOfLife
         /// </summary>
         private void GenerateCells()
         {
-            Cells = new Cell[Xcells, Ycells];
+            Cells = new Cell[GridHeight, GridWidth];
+
             int rowCount = Cells.GetLength(0);
             int columnCount = Cells.GetLength(1);
+
             for (int x = 0; x < rowCount; x++)
             {
-                for (int y = 0; y < Cells.GetLength(1); y++)
+                for (int y = 0; y < columnCount; y++)
                 {
                     Cell current = new Cell();
                     Cells[x, y] = current;
@@ -109,7 +113,6 @@ namespace TheGameOfLife
                     }
                 }
             }
-            GameClient.MapCellsToClient(Cells);
         }
 
         public void StartGame()
@@ -150,13 +153,7 @@ namespace TheGameOfLife
             {
                 cell.Alive = true;
             }
-
             GameClient.RefreshClient();
-        }
-
-        public void EndGame()
-        {
-
         }
     }
 }

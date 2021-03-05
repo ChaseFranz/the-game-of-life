@@ -8,8 +8,8 @@ namespace TheGameOfLife
 
         public Cell[,] Cells { get; set; }
 
-        public int Ycells { get; set; }
-        public int Xcells { get; set; }
+        public int GridHeight { get; set; }
+        public int GridWidth { get; set; }
 
         public ConcurrentBag<Cell> CellBag { get; set; }
 

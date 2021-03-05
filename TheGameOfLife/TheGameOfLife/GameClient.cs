@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading.Tasks;
@@ -22,48 +23,23 @@ namespace TheGameOfLife
 
         private void GameClient_Load(object sender, EventArgs e)
         {
-            canvas.Size = new Size(ClientRectangle.Width / 4, ClientRectangle.Height / 4);
+            canvas.Size = new Size(ClientRectangle.Width, ClientRectangle.Height);
             canvas.Image = new Bitmap(canvas.Width, canvas.Height, PixelFormat.Format24bppRgb);
             gameTimer.Enabled = true;
-            GameEngine.Ycells = canvas.Image.Height;
-            GameEngine.Xcells = canvas.Image.Width;
+            GameEngine.GridHeight = canvas.Image.Height;
+            GameEngine.GridWidth = canvas.Image.Width;
             GameEngine.StartGame();
 
-            for(int x=0; x < 100; x++)
+            for (int x = 0; x < 100; x++)
             {
                 GameEngine.NextCycle();
-            }
+            }  
         }
 
         public void RefreshClient()
         {
             UpdateClientBitMapMultiThreadLockbits();
             Refresh();
-        }
-
-        private void UpdateClientBitMapSetPixel()
-        {
-            foreach (Cell cell in GameEngine.CellBag)
-            {
-                Bitmap source = (Bitmap)canvas.Image;
-
-                CellPixelMapper.TryGetValue(cell, out (int xCoordinate, int yCoordinate, int width, int height) value);
-
-                for (int x = value.xCoordinate; x < value.xCoordinate + value.width; x++)
-                {
-                    for (int y = value.yCoordinate; y < value.yCoordinate + value.height; y++)
-                    {
-                        if (cell.Alive)
-                        {
-                            source.SetPixel(x, y, Color.White);
-                        }
-                        else
-                        {
-                            source.SetPixel(x, y, Color.DarkGray);
-                        }
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -79,10 +55,8 @@ namespace TheGameOfLife
                 int heightInPixels = bitmapData.Height;
                 int widthInBytes = bitmapData.Width * bytesPerPixel;
                 byte* PtrFirstPixel = (byte*)bitmapData.Scan0;
-                int pixelsPerCellY = heightInPixels / GameEngine.Ycells;
-                int pixelsPerCellX = widthInBytes / bytesPerPixel / GameEngine.Xcells;
-
-
+                int pixelsPerCellY = heightInPixels / GameEngine.GridHeight;
+                int pixelsPerCellX = widthInBytes / bytesPerPixel / GameEngine.GridWidth;
 
                 Parallel.For(0, heightInPixels, y =>
                 {
@@ -94,8 +68,8 @@ namespace TheGameOfLife
 
                     for (int x = 0; x < widthInBytes; x += bytesPerPixel)
                     {
-                        int xIndex = (x/bytesPerPixel) / pixelsPerCellX;
-                        bool alive = GameEngine.Cells[xIndex, yIndex].Alive;
+                        int xIndex = (x / bytesPerPixel) / pixelsPerCellX;
+                        bool alive = GameEngine.Cells[yIndex, xIndex ].Alive;
                         currentPixel++;
 
                         if (alive)
@@ -114,24 +88,6 @@ namespace TheGameOfLife
                 });
                 processedBitmap.UnlockBits(bitmapData);
             }
-        }
-
-        public void MapCellsToClient(Cell[,] cells)
-        {
-            // Get Dimensions in pixels of each cell
-            int cellWidthPixels = (canvas.Image.Width / GameEngine.Xcells);
-            int cellHeightPixels = (canvas.Image.Height / GameEngine.Ycells);
-            int rowCount = cells.GetLength(0);
-            int columnCount = cells.GetLength(1);
-
-            CellPixelMapper = new ConcurrentDictionary<Cell, (int x, int y, int width, int height)>();
-
-            Parallel.For(0, rowCount, (int x) => {
-                for (int y = 0; y < columnCount; y++)
-                {
-                    CellPixelMapper.TryAdd(cells[x, y], (x * cellWidthPixels, y * cellHeightPixels, cellWidthPixels, cellHeightPixels));
-                }
-            });
         }
     }
 }
