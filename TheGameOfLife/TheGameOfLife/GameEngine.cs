@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace TheGameOfLife
 {
@@ -146,7 +145,6 @@ namespace TheGameOfLife
                 {
                     Cells[rowIndex, columnIndex].Alive = Cells[rowIndex, columnIndex].KillCell;
                 }
-
             });
         }
     }

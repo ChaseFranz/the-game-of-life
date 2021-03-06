@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-
-namespace TheGameOfLife
+﻿namespace TheGameOfLife
 {
     public interface IGameEngine
     {
