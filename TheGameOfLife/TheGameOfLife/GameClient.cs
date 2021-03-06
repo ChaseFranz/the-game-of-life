@@ -19,7 +19,7 @@ namespace TheGameOfLife
 
         private void GameClient_Load(object sender, EventArgs e)
         {
-            canvas.Size = new Size(ClientRectangle.Width / 2, ClientRectangle.Height / 2);
+            canvas.Size = new Size(ClientRectangle.Width, ClientRectangle.Height);
             canvas.Image = new Bitmap(canvas.Width, canvas.Height, PixelFormat.Format24bppRgb);
             gameTimer.Enabled = true;
             GameEngine.GridHeight = canvas.Image.Height;
@@ -47,7 +47,7 @@ namespace TheGameOfLife
             {
                 Bitmap processedBitmap = (Bitmap)canvas.Image;
                 BitmapData bitmapData = processedBitmap.LockBits(new Rectangle(0, 0, processedBitmap.Width, processedBitmap.Height), ImageLockMode.ReadWrite, processedBitmap.PixelFormat);
-                int bytesPerPixel = System.Drawing.Bitmap.GetPixelFormatSize(processedBitmap.PixelFormat) / 8;
+                int bytesPerPixel = Image.GetPixelFormatSize(processedBitmap.PixelFormat) / 8;
                 int heightInPixels = bitmapData.Height;
                 int widthInBytes = bitmapData.Width * bytesPerPixel;
                 byte* PtrFirstPixel = (byte*)bitmapData.Scan0;

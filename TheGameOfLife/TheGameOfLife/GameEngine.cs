@@ -122,9 +122,6 @@ namespace TheGameOfLife
 
         private void UpdateGridState()
         {
-            ConcurrentBag<Cell> deadCells = new ConcurrentBag<Cell>();
-            ConcurrentBag<Cell> liveCells = new ConcurrentBag<Cell>();
-
             int rows = Cells.GetLength(0);
             int columns = Cells.GetLength(1);
 
@@ -138,26 +135,18 @@ namespace TheGameOfLife
 
                     if (isLiving || liveNeighborCount > 1)
                     {
-                        if ((!isLiving && liveNeighborCount == 3) || (liveNeighborCount == 2 || liveNeighborCount == 3))
-                        {
-                            liveCells.Add(currentCell);
-                        }
-                        else
-                        {
-                            deadCells.Add(currentCell);
-                        }
+                        currentCell.KillCell = ((!isLiving && liveNeighborCount == 3) || (liveNeighborCount == 2 || liveNeighborCount == 3));
                     }
                 }
             });
 
-            Parallel.ForEach(deadCells, currentCell =>
+            Parallel.For(0, rows, rowIndex =>
             {
-                currentCell.Alive = false;
-            });
+                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
+                {
+                    Cells[rowIndex, columnIndex].Alive = Cells[rowIndex, columnIndex].KillCell;
+                }
 
-            Parallel.ForEach(liveCells, currentCell =>
-            {
-                currentCell.Alive = true;
             });
         }
     }
