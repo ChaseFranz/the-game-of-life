@@ -7,8 +7,6 @@ namespace TheGameOfLife
         public IGameEngine GameEngine { get; set; }
 
         public void RefreshClient();
-
-        public void MapCellsToClient(Cell[,] cells);
-
+ 
     }
 }

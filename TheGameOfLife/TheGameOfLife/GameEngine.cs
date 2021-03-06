@@ -1,6 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace TheGameOfLife
@@ -9,15 +7,13 @@ namespace TheGameOfLife
     {
         public  Cell[,] Cells { get; set; }
 
-        public ConcurrentBag<Cell> CellBag { get; set; }
-        public int Ycells { get; set; }
-        public int Xcells { get; set; }
+        public int GridHeight { get; set; }
+        public int GridWidth { get; set; }
 
         public IClient GameClient { get; set; }
 
         public GameEngine()
         {
-            CellBag = new ConcurrentBag<Cell>();
         }
 
         /// <summary>
@@ -25,91 +21,21 @@ namespace TheGameOfLife
         /// </summary>
         private void GenerateCells()
         {
-            Cells = new Cell[Xcells, Ycells];
+            Cells = new Cell[GridHeight, GridWidth];
+
             int rowCount = Cells.GetLength(0);
             int columnCount = Cells.GetLength(1);
-            for (int x = 0; x < rowCount; x++)
+
+            // Enumerate row-wise
+            for (int row = 0; row < rowCount; row++)
             {
-                for (int y = 0; y < Cells.GetLength(1); y++)
+                for (int column = 0; column < columnCount; column++)
                 {
-                    Cell current = new Cell();
-                    Cells[x, y] = current;
-                    CellBag.Add(current);
-
-                    switch (x,y)
-                    {
-                        // RIGHT WALL OR MIDDLE
-                        case var tuple when tuple.x > 0 && tuple.y > 0 && tuple.y < columnCount - 1:
-                            current.Neighbors.AddRange(new List<Cell>() {
-                                Cells[x, y - 1],
-                                Cells[x - 1, y - 1],
-                                Cells[x - 1, y],
-                                Cells[x - 1, y + 1],
-                            });
-                            Cells[x, y - 1].Neighbors.Add(current);
-                            Cells[x - 1, y - 1].Neighbors.Add(current);
-                            Cells[x - 1, y].Neighbors.Add(current);
-                            Cells[x - 1, y + 1].Neighbors.Add(current);
-                            break;
-
-                        // BOTTOM WALL
-                        case var tuple when tuple.x > 0 && tuple.x <= rowCount - 1 && tuple.y == columnCount - 1:
-                            current.Neighbors.AddRange(new List<Cell>() {
-                                Cells[x, y - 1],
-                                Cells[x - 1, y - 1],
-                                Cells[x - 1, y],
-                            });
-                            Cells[x, y - 1].Neighbors.Add(current);
-                            Cells[x - 1, y - 1].Neighbors.Add(current);
-                            Cells[x - 1, y].Neighbors.Add(current);
-                            break;
-
-                        // TOP WALL AND TOP RIGHT CORNER
-                        case var tuple when tuple.x > 0  && tuple.y == 0:
-                            current.Neighbors.AddRange(new List<Cell>() {
-                                Cells[x - 1, y],
-                                Cells[x - 1, y + 1]
-                            });
-                            Cells[x - 1, y].Neighbors.Add(current);
-                            Cells[x - 1, y + 1].Neighbors.Add(current);
-                            break;
-
-                        // LEFT WALL
-                        case var tuple when tuple.x == 0 && tuple.y >= 1 && tuple.y < columnCount - 1:
-                            current.Neighbors.AddRange(new List<Cell>() {
-                                Cells[x, y - 1],
-                            });
-                            Cells[x, y - 1].Neighbors.Add(current);
-                            break;
-
-                        // TOP LEFT Corner
-                        case var tuple when tuple.x == 0 && tuple.y == 0:
-                            // Do Nothing. First Cell in Network
-                            break;
-
-                        // BOTTOM LEFT Corner
-                        case var tuple when tuple.x == 0 && tuple.y == columnCount - 1:
-                            current.Neighbors.AddRange(new List<Cell>() { 
-                                Cells[x, y-1]
-                            });
-                            Cells[x, y - 1].Neighbors.Add(current);
-                            break;
-
-                        // BOTTOM RIGHT Corner
-                        case var tuple when tuple.x == rowCount - 1 && tuple.y == columnCount - 1:
-                            current.Neighbors.AddRange(new List<Cell>() { 
-                                Cells[x, y - 1],
-                                Cells[x - 1, y - 1],
-                                Cells[x - 1, y],
-                            });
-                            Cells[x, y - 1].Neighbors.Add(current);
-                            Cells[x - 1, y - 1].Neighbors.Add(current);
-                            Cells[x - 1, y].Neighbors.Add(current);
-                            break;
-                    }
+                    // Create cell and add to collections
+                    Cell cell = new Cell();
+                    Cells[row, column] = cell;
                 }
             }
-            GameClient.MapCellsToClient(Cells);
         }
 
         public void StartGame()
@@ -120,43 +46,108 @@ namespace TheGameOfLife
 
         public void NextCycle()
         {
-            ConcurrentBag<Cell> deadCells = new ConcurrentBag<Cell>();
-            ConcurrentBag<Cell> liveCells = new ConcurrentBag<Cell>();
-
-            Parallel.ForEach(CellBag, cell =>
-            {
-                int livingNeighbors = cell.Neighbors.Where(n => n.Alive).Count();
-                bool isLiving = cell.Alive;
-
-                if (isLiving || livingNeighbors > 1)
-                {
-                    if ((!isLiving && livingNeighbors == 3) || (livingNeighbors == 2 || livingNeighbors == 3))
-                    {
-                        liveCells.Add(cell);
-                    }
-                    else
-                    {
-                        deadCells.Add(cell);
-                    }
-                }
-            });
-            
-            foreach (Cell cell in deadCells)
-            {
-                cell.Alive = false;
-            }
-
-            foreach (Cell cell in liveCells)
-            {
-                cell.Alive = true;
-            }
-
+            UpdateGridState();
             GameClient.RefreshClient();
         }
 
-        public void EndGame()
+        public int GetLivingNeighborCount(int row, int column)
         {
+            int liveCount = 0;
+            int rowCount = Cells.GetLength(0);
+            int columnCount = Cells.GetLength(1);
 
+            bool notFirstRow = row - 1 >= 0;
+            bool notFirstColumn = column - 1 >= 0;
+            bool notLastColumn = column + 1 < columnCount; // 0-based index
+            bool notLastRow = row + 1 < rowCount; // 0-based index
+            Cell neighborCell;
+
+            // Top-Middle
+            if (notFirstRow)
+            {
+                neighborCell = Cells[row - 1, column];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+
+            // Top-Left
+            if (notFirstColumn && notFirstRow)
+            {
+                neighborCell = Cells[row - 1, column - 1];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+
+            // Top-Right
+            if (notLastColumn && notFirstRow)
+            {
+                neighborCell = Cells[row - 1, column + 1];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+
+            // Mid-Left
+            if (notFirstColumn)
+            {
+                neighborCell = Cells[row, column - 1];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+
+            // Mid-Right
+            if (notLastColumn)
+            {
+                neighborCell = Cells[row, column + 1];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+
+            // Bottom-Left
+            if (notFirstColumn && notLastRow)
+            {
+                neighborCell = Cells[row + 1, column - 1];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+
+            // Bottom-Right
+            if (notLastColumn && notLastRow)
+            {
+                neighborCell = Cells[row + 1, column + 1];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+
+            // Bottom-Mid
+            if (notLastRow)
+            {
+                neighborCell = Cells[row + 1, column];
+                liveCount += neighborCell.Alive ? 1 : 0;
+            }
+            return liveCount;
+        }
+
+        private void UpdateGridState()
+        {
+            int rows = Cells.GetLength(0);
+            int columns = Cells.GetLength(1);
+
+            Parallel.For(0, rows, rowIndex =>
+            {
+                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
+                {
+                    var currentCell = Cells[rowIndex, columnIndex];
+                    int liveNeighborCount = GetLivingNeighborCount(rowIndex, columnIndex);
+                    bool isLiving = currentCell.Alive;
+
+                    if (isLiving || liveNeighborCount > 1)
+                    {
+                        currentCell.KillCell = ((!isLiving && liveNeighborCount == 3) || (liveNeighborCount == 2 || liveNeighborCount == 3));
+                    }
+                }
+            });
+
+            Parallel.For(0, rows, rowIndex =>
+            {
+                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
+                {
+                    Cells[rowIndex, columnIndex].Alive = Cells[rowIndex, columnIndex].KillCell;
+                }
+
+            });
         }
     }
 }
