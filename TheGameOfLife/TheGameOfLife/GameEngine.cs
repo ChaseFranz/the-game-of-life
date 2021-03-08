@@ -59,62 +59,54 @@ namespace TheGameOfLife
             bool notFirstColumn = column - 1 >= 0;
             bool notLastColumn = column + 1 < columnCount; // 0-based index
             bool notLastRow = row + 1 < rowCount; // 0-based index
-            Cell neighborCell;
+            //Cell neighborCell;
 
             // Top-Middle
             if (notFirstRow)
             {
-                neighborCell = Cells[row - 1, column];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row - 1, column].Alive ? 1 : 0;
             }
 
             // Top-Left
             if (notFirstColumn && notFirstRow)
             {
-                neighborCell = Cells[row - 1, column - 1];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row - 1, column - 1].Alive ? 1 : 0;
             }
 
             // Top-Right
             if (notLastColumn && notFirstRow)
             {
-                neighborCell = Cells[row - 1, column + 1];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row - 1, column + 1].Alive ? 1 : 0;
             }
 
             // Mid-Left
             if (notFirstColumn)
             {
-                neighborCell = Cells[row, column - 1];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row, column - 1].Alive ? 1 : 0;
             }
 
             // Mid-Right
             if (notLastColumn)
             {
-                neighborCell = Cells[row, column + 1];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row, column + 1].Alive ? 1 : 0;
             }
 
             // Bottom-Left
             if (notFirstColumn && notLastRow)
             {
-                neighborCell = Cells[row + 1, column - 1];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row + 1, column - 1].Alive ? 1 : 0;
             }
 
             // Bottom-Right
             if (notLastColumn && notLastRow)
             {
-                neighborCell = Cells[row + 1, column + 1];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row + 1, column + 1].Alive ? 1 : 0;
             }
 
             // Bottom-Mid
             if (notLastRow)
             {
-                neighborCell = Cells[row + 1, column];
-                liveCount += neighborCell.Alive ? 1 : 0;
+                liveCount += Cells[row + 1, column].Alive ? 1 : 0;
             }
             return liveCount;
         }
@@ -132,16 +124,7 @@ namespace TheGameOfLife
                     int liveNeighborCount = GetLivingNeighborCount(rowIndex, columnIndex);
                     bool isLiving = currentCell.Alive;
 
-                    currentCell.KillCell = true;
-
-                    if (isLiving && (liveNeighborCount == 2 || liveNeighborCount == 3))
-                    {
-                        currentCell.KillCell = false;
-                    }
-                    if (!isLiving && liveNeighborCount == 3)
-                    {
-                        currentCell.KillCell = false;
-                    }
+                    currentCell.KillCell = !((isLiving && (liveNeighborCount == 2 || liveNeighborCount == 3)) || (!isLiving && liveNeighborCount == 3));
                 }
             });
 
