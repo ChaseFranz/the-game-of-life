@@ -65,18 +65,9 @@ namespace TheGameOfLife
                         int column = (x/bytesPerPixel)/pixelsPerCellX;
                         bool alive = GameEngine.Cells[row,column].Alive;
 
-                        if (alive)
-                        {
-                            currentLine[x] = Color.White.B;
-                            currentLine[x + 1] = Color.White.G;
-                            currentLine[x + 2] = Color.White.R;
-                        }
-                        else
-                        {
-                            currentLine[x] = Color.DarkGray.B;
-                            currentLine[x + 1] = Color.DarkGray.G;
-                            currentLine[x + 2] = Color.DarkGray.R;
-                        }
+                        currentLine[x] = alive ? Color.DarkRed.B : Color.LightGray.B;
+                        currentLine[x + 1] = alive ? Color.DarkRed.G : Color.LightGray.G;
+                        currentLine[x + 2] = alive ? Color.DarkRed.R : Color.LightGray.R;
                     }
                 });
                 processedBitmap.UnlockBits(bitmapData);
