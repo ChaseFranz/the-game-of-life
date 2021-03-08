@@ -132,9 +132,15 @@ namespace TheGameOfLife
                     int liveNeighborCount = GetLivingNeighborCount(rowIndex, columnIndex);
                     bool isLiving = currentCell.Alive;
 
-                    if (isLiving || liveNeighborCount > 1)
+                    currentCell.KillCell = true;
+
+                    if (isLiving && (liveNeighborCount == 2 || liveNeighborCount == 3))
                     {
-                        currentCell.KillCell = ((!isLiving && liveNeighborCount == 3) || (liveNeighborCount == 2 || liveNeighborCount == 3));
+                        currentCell.KillCell = false;
+                    }
+                    if (!isLiving && liveNeighborCount == 3)
+                    {
+                        currentCell.KillCell = false;
                     }
                 }
             });
@@ -143,7 +149,7 @@ namespace TheGameOfLife
             {
                 for (int columnIndex = 0; columnIndex < columns; columnIndex++)
                 {
-                    Cells[rowIndex, columnIndex].Alive = Cells[rowIndex, columnIndex].KillCell;
+                    Cells[rowIndex, columnIndex].Alive = !Cells[rowIndex, columnIndex].KillCell;
                 }
             });
         }
