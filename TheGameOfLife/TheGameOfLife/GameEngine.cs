@@ -21,18 +21,14 @@ namespace TheGameOfLife
         private void GenerateCells()
         {
             Cells = new Cell[GridHeight, GridWidth];
-
             int rowCount = Cells.GetLength(0);
             int columnCount = Cells.GetLength(1);
 
-            // Enumerate row-wise
             for (int row = 0; row < rowCount; row++)
             {
                 for (int column = 0; column < columnCount; column++)
                 {
-                    // Create cell and add to collections
-                    Cell cell = new Cell();
-                    Cells[row, column] = cell;
+                    Cells[row, column] = new Cell();
                 }
             }
         }
@@ -59,55 +55,31 @@ namespace TheGameOfLife
             bool notFirstColumn = column - 1 >= 0;
             bool notLastColumn = column + 1 < columnCount; // 0-based index
             bool notLastRow = row + 1 < rowCount; // 0-based index
-            //Cell neighborCell;
 
             // Top-Middle
-            if (notFirstRow)
-            {
-                liveCount += Cells[row - 1, column].Alive ? 1 : 0;
-            }
+            liveCount += (notFirstRow && Cells[row - 1, column].Alive) ? 1 : 0;
 
             // Top-Left
-            if (notFirstColumn && notFirstRow)
-            {
-                liveCount += Cells[row - 1, column - 1].Alive ? 1 : 0;
-            }
+            liveCount += ((notFirstColumn && notFirstRow) && Cells[row - 1, column - 1].Alive) ? 1 : 0;
 
             // Top-Right
-            if (notLastColumn && notFirstRow)
-            {
-                liveCount += Cells[row - 1, column + 1].Alive ? 1 : 0;
-            }
+            liveCount += ((notLastColumn && notFirstRow) && Cells[row - 1, column + 1].Alive) ? 1 : 0;
 
             // Mid-Left
-            if (notFirstColumn)
-            {
-                liveCount += Cells[row, column - 1].Alive ? 1 : 0;
-            }
+            liveCount += (notFirstColumn && Cells[row, column - 1].Alive) ? 1 : 0;
 
             // Mid-Right
-            if (notLastColumn)
-            {
-                liveCount += Cells[row, column + 1].Alive ? 1 : 0;
-            }
+            liveCount += (notLastColumn && Cells[row, column + 1].Alive) ? 1 : 0;
 
             // Bottom-Left
-            if (notFirstColumn && notLastRow)
-            {
-                liveCount += Cells[row + 1, column - 1].Alive ? 1 : 0;
-            }
+            liveCount += ((notFirstColumn && notLastRow) && Cells[row + 1, column - 1].Alive) ? 1 : 0;
 
             // Bottom-Right
-            if (notLastColumn && notLastRow)
-            {
-                liveCount += Cells[row + 1, column + 1].Alive ? 1 : 0;
-            }
+            liveCount += ((notLastColumn && notLastRow) && Cells[row + 1, column + 1].Alive) ? 1 : 0;
 
             // Bottom-Mid
-            if (notLastRow)
-            {
-                liveCount += Cells[row + 1, column].Alive ? 1 : 0;
-            }
+            liveCount += (notLastRow && Cells[row + 1, column].Alive) ? 1 : 0;
+
             return liveCount;
         }
 
