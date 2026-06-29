@@ -1,38 +1,52 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using TheGameOfLife.Core;
 
 namespace TheGameOfLife
 {
-    public partial class GameClient : Form, IClient
+    public partial class GameClient : Form
     {
-        public IGameEngine GameEngine { get; set; }
+        /// <summary>Edge length, in pixels, of one simulation cell on screen.</summary>
+        private const int CellSize = 4;
 
-        public GameClient(IGameEngine gameEngine)
+        /// <summary>Milliseconds between generations.</summary>
+        private const int TickIntervalMs = 50;
+
+        private IGameEngine _engine = null!;
+
+        public GameClient()
         {
             InitializeComponent();
-            GameEngine = gameEngine;
-            GameEngine.GameClient = this;
         }
 
         private void GameClient_Load(object sender, EventArgs e)
         {
-            canvas.Size = new Size(ClientRectangle.Width, ClientRectangle.Height);
-            canvas.Image = new Bitmap(canvas.Width, canvas.Height, PixelFormat.Format24bppRgb);
-            gameTimer.Enabled = true;
-            GameEngine.GridHeight = canvas.Image.Height;
-            GameEngine.GridWidth = canvas.Image.Width;
-            GameEngine.StartGame();
+            // Grid resolution is derived from the window size and the desired cell
+            // size, independent of one-cell-per-pixel. The bitmap is sized to an
+            // exact multiple of CellSize so every pixel maps to a valid cell.
+            int columns = Math.Max(1, ClientRectangle.Width / CellSize);
+            int rows = Math.Max(1, ClientRectangle.Height / CellSize);
+            int bitmapWidth = columns * CellSize;
+            int bitmapHeight = rows * CellSize;
 
-            for (int x = 0; x < 1000; x++)
-            {
-                GameEngine.NextCycle();
-            }  
+            canvas.Size = new Size(bitmapWidth, bitmapHeight);
+            canvas.Image = new Bitmap(bitmapWidth, bitmapHeight, PixelFormat.Format24bppRgb);
+
+            _engine = new GameEngine(new GameConfig { Rows = rows, Columns = columns });
+            _engine.GenerationAdvanced += OnGenerationAdvanced;
+            _engine.StartGame();
+
+            // Drive the simulation from the timer instead of a blocking loop, so
+            // the UI stays responsive and actually animates.
+            gameTimer.Interval = TickIntervalMs;
+            gameTimer.Tick += (_, _) => _engine.NextCycle();
+            gameTimer.Enabled = true;
         }
 
-        public void RefreshClient()
+        private void OnGenerationAdvanced(object? sender, GenerationEventArgs e)
         {
             UpdateClientBitMapMultiThreadLockbits();
             Refresh();
@@ -45,14 +59,14 @@ namespace TheGameOfLife
         {
             unsafe
             {
-                Bitmap processedBitmap = (Bitmap)canvas.Image;
+                Bitmap processedBitmap = (Bitmap)canvas.Image!;
                 BitmapData bitmapData = processedBitmap.LockBits(new Rectangle(0, 0, processedBitmap.Width, processedBitmap.Height), ImageLockMode.ReadWrite, processedBitmap.PixelFormat);
                 int bytesPerPixel = Image.GetPixelFormatSize(processedBitmap.PixelFormat) / 8;
                 int heightInPixels = bitmapData.Height;
                 int widthInBytes = bitmapData.Width * bytesPerPixel;
                 byte* PtrFirstPixel = (byte*)bitmapData.Scan0;
-                int pixelsPerCellY = heightInPixels / GameEngine.GridHeight;
-                int pixelsPerCellX = widthInBytes / bytesPerPixel / GameEngine.GridWidth;
+                int pixelsPerCellY = heightInPixels / _engine.Rows;
+                int pixelsPerCellX = widthInBytes / bytesPerPixel / _engine.Columns;
 
                 Parallel.For(0, heightInPixels, y =>
                 {
@@ -62,8 +76,8 @@ namespace TheGameOfLife
 
                     for (int x = 0; x < widthInBytes; x += bytesPerPixel)
                     {
-                        int column = (x/bytesPerPixel)/pixelsPerCellX;
-                        bool alive = GameEngine.Cells[row,column].Alive;
+                        int column = (x / bytesPerPixel) / pixelsPerCellX;
+                        bool alive = _engine.Cells[row, column].Alive;
 
                         currentLine[x] = alive ? Color.DarkRed.B : Color.LightGray.B;
                         currentLine[x + 1] = alive ? Color.DarkRed.G : Color.LightGray.G;

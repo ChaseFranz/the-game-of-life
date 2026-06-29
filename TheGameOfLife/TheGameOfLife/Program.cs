@@ -11,11 +11,8 @@ namespace TheGameOfLife
         [STAThread]
         static void Main()
         {
-            Application.SetHighDpiMode(HighDpiMode.SystemAware);
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            IClient client = new GameClient(new GameEngine());
-            Application.Run((GameClient)client);
+            ApplicationConfiguration.Initialize();
+            Application.Run(new GameClient());
         }
     }
 }
