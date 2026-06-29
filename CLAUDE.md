@@ -7,11 +7,8 @@ Guidance for AI assistants working in this repository.
 Conway's Game of Life implemented as a **Windows Forms desktop application** in
 C# on **.NET Core 3.1** (`netcoreapp3.1`, `UseWindowsForms`). The simulation is
 rendered by drawing directly into a `Bitmap` and showing it in a `PictureBox`,
-so each grid cell maps to a block of pixels on a maximized window.
-
-> Note: `README.md` describes the project as "An ASP.Net Core implementation."
-> That is inaccurate — there is no ASP.NET / web component. It is a Windows
-> Forms (`WinExe`) app. Keep this in mind; treat the code as the source of truth.
+so each grid cell maps to a block of pixels on a maximized window. It is a
+Windows Forms (`WinExe`) app — there is no ASP.NET / web component.
 
 ## Platform constraint (important)
 
